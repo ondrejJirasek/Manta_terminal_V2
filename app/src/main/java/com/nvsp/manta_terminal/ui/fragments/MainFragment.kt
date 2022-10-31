@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.setMargins
 import androidx.gridlayout.widget.GridLayout
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.zxing.integration.android.IntentIntegrator
@@ -37,6 +38,7 @@ import com.nvsp.manta_terminal.R
 import com.nvsp.manta_terminal.adapters.OperatorAdapter
 import com.nvsp.manta_terminal.databinding.DialogFillQrLogOperationBinding
 import com.nvsp.manta_terminal.databinding.FragmentMainBinding
+import com.nvsp.manta_terminal.ui.activities.MainActivity
 import com.nvsp.manta_terminal.viewmodels.MainFragmentViewModel
 import com.nvsp.manta_terminal.workplaces.Workplace
 import com.nvsp.manta_terminal.workplaces.WorkplaceAdapter
@@ -64,6 +66,8 @@ import kotlinx.coroutines.withContext
 class MainFragment :
     BaseFragment<FragmentMainBinding, MainFragmentViewModel>(MainFragmentViewModel::class),
     MessageListener {
+
+
 
    private  val barcode=MutableLiveData<String>("")
    private  val wpAdapter: WorkplaceAdapter by lazy {
@@ -252,15 +256,18 @@ class MainFragment :
     }
 
     override fun onActivityCreated() {
-
+        setBackButton(false)
         viewModel.loadWorkplaces()
+
     }
 
     private fun selectedWorkplace(item: Workplace) {
         Log.e("WORKPACES", "SELECT WORKPLACE $item")
         val url = viewModel.activeSetting.value?.getIpAndPort()
         val devId = BaseApp.remoteSettings?.id
-        WebSocketManager.close()
+
+
+      //  WebSocketManager.close()
         //val urlAddress = "ws://192.168.1.16:8089/api/Weighing/RequestNotification/4AS9934"
         val urlAddress= if(viewModel.login.value?.role==null)
             "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?editableListId=$WORK_QUEUE_ID"
@@ -268,12 +275,16 @@ class MainFragment :
             "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?roleId=${viewModel.login.value?.role}&editableListId=$WORK_QUEUE_ID"///&editableListFilterJson=[]"//[{argumentKey:WorkplaceID,argumentValue:${item.id}}]"
 
         Log.d("SOCKET INIT", "ip and port:$urlAddress ")
+        WebSocketManager.close()
+      /*  if(WebSocketManager.isConnect())
+            WebSocketManager.changeURL(urlAddress)
+        else {*/
+            WebSocketManager.init(urlAddress, this)
 
-        WebSocketManager.init(urlAddress, this)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            WebSocketManager.connect()
-        }
+            CoroutineScope(Dispatchers.IO).launch {
+                WebSocketManager.connect()
+            }
+     //   }
         viewModel.login.value?.let {
             viewModel.loadMenu(item.id, it.role?:(0)){error->
                 infoDialog.showWithMessage("badConfig"){
@@ -567,6 +578,14 @@ class MainFragment :
             }
             Const.DOCUMENTATION->{
                 showDocumentation()
+            }
+            Const.EVIDENCE_STANDARD->{
+                val action = MainFragmentDirections.actionMainFragmentToEvidence(
+                    workplaceID = viewModel.selectedWPId,
+                    teamWorking = viewModel.workplaces.value?.find { it.id == viewModel.selectedWPId }?.teamWorking?:(false),
+                    mode = Const.MODE_EVIDENCE_HEI
+                )
+                findNavController().navigate(action)
             }
 
         }

@@ -1,6 +1,7 @@
 package com.nvsp.manta_terminal.di
 
 import androidx.lifecycle.SavedStateHandle
+import com.nvsp.manta_terminal.evidence.EvidenceViewModel
 import com.nvsp.manta_terminal.viewmodels.MainFragmentViewModel
 import com.nvsp.manta_terminal.viewmodels.MainViewModel
 import com.nvsp.manta_terminal.viewmodels.SplashViewModel
@@ -36,6 +37,7 @@ val viewModelModule = module {
     viewModel { MainViewModel(get(), get()) }
     viewModel { MainFragmentViewModel(get(), get()) }
     //viewModel { AddTaskViewModel(get(), get()) }
+    viewModel { EvidenceViewModel(get(), get()) }
 fun provideSavedStateHandle():SavedStateHandle{
     return SavedStateHandle()
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tvPart"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:text="@string/part"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvPorductOrder"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:text="@string/productOrder"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvOperation"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3"
+        android:text="@string/operation"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvOk"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:singleLine="true"
+        android:text="@string/OK"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvNok"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:singleLine="true"
+        android:text="@string/NOK"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvLive"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:singleLine="true"
+        android:text="@string/entered"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+</LinearLayout>

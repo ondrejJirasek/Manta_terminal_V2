@@ -9,5 +9,41 @@
         android:id="@+id/mainFragment"
         android:name="com.nvsp.manta_terminal.ui.fragments.MainFragment"
         android:label="fragment_main"
-        tools:layout="@layout/fragment_main" />
+        tools:layout="@layout/fragment_main" >
+        <action
+            android:id="@+id/action_mainFragment_to_evidence"
+            app:destination="@id/evidence" >
+            <argument
+                android:name="workplaceID"
+                app:argType="integer"
+                android:defaultValue="-1" />
+            <argument
+                android:name="teamWorking"
+                app:argType="boolean"
+
+                android:defaultValue="false" />
+            <argument
+                android:name="mode"
+                app:argType="integer"
+                android:defaultValue="0" />
+        </action>
+    </fragment>
+    <fragment
+        android:id="@+id/evidence"
+        android:name="com.nvsp.manta_terminal.evidence.Evidence"
+        android:label="Evidence"
+        tools:layout="@layout/fragment_evidence">
+        <argument
+            android:name="workplaceID"
+            app:argType="integer"
+            android:defaultValue="-1" />
+        <argument
+            android:name="teamWorking"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="mode"
+            app:argType="integer"
+            android:defaultValue="0" />
+    </fragment>
 </navigation>

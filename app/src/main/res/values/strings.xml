@@ -6,4 +6,17 @@
     <string name="barcodeOperation">Čárový kód operace</string>
     <string name="chooseFromList">Vybrat ze seznamu</string>
     <string name="operatrionNotSelect">Není vybraná operace! \n Vyberte prosím operaci.</string>
+
+    <string name="productOrder">Výrobní příkaz</string>
+    <string name="operation">Operace</string>
+    <string name="OK">Ok</string>
+    <string name="NOK">Nok</string>
+    <string name="liveCount">Ks. živé</string>
+    <string name="remains">Zbývá</string>
+    <string name="OKCount">Počet OK kusů</string>
+    <string name="NOKCount">Počet NOK kusů</string>
+    <string name="CyclesCount">Počet cyklů</string>
+    <string name="codeMistake">Kód závady</string>
+    <string name="pieces">Ks</string>
+    <string name="entered">Zadáno [ks]</string>
 </resources>

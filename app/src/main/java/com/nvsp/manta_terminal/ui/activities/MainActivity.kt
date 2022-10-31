@@ -149,6 +149,12 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         Objects.requireNonNull(supportActionBar)!!.displayOptions = ActionBar.DISPLAY_SHOW_CUSTOM
         supportActionBar?.setCustomView(R.layout.toolbar_clock)
+        binding.toolbar.setNavigationIcon(R.drawable.ic_back)
+        binding.toolbar.setNavigationOnClickListener {
+            super.onBackPressed()
+        }
+        
+
     }
     private fun conectionState(state: Boolean){
         menu?.let { menu ->
@@ -170,6 +176,13 @@ class MainActivity : AppCompatActivity() {
             menu?.findItem(R.id.action_login)?.setIcon(R.drawable.ic_user)
         }
     }
+    fun setBackButtonVisibility(state:Boolean){
+        supportActionBar?.setDisplayHomeAsUpEnabled(state)
+        supportActionBar?.setDisplayShowHomeEnabled(state)
+
+    }
+
+
     private fun restartApp(){
         BaseApp.instance.restartApp()
     }
