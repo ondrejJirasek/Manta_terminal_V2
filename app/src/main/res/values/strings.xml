@@ -19,4 +19,17 @@
     <string name="codeMistake">Kód závady</string>
     <string name="pieces">Ks</string>
     <string name="entered">Zadáno [ks]</string>
+
+    <string name="info">Info</string>
+    <string name="nok">NOK</string>
+    <string name="consumption">Spotřeba</string>
+    <string name="evidence">Evidence</string>
+    <string name="type">Typ</string>
+    <string name="sector">Sektor</string>
+    <string name="evidenceNOK">Evidence NOK kusů</string>
+    <string name="kindDefect">Druh Závady</string>
+    <string name="repairable">Opravitelné</string>
+    <string name="nonReparaible">Neopravitelné</string>
+    <string name="internalReparaible">Interně opravitelné</string>
+    <string name="photo">Foto</string>
 </resources>

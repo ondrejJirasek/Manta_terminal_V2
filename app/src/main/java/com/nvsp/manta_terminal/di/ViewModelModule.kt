@@ -37,7 +37,7 @@ val viewModelModule = module {
     viewModel { MainViewModel(get(), get()) }
     viewModel { MainFragmentViewModel(get(), get()) }
     //viewModel { AddTaskViewModel(get(), get()) }
-    viewModel { EvidenceViewModel(get(), get()) }
+    single { EvidenceViewModel(get(), get()) }
 fun provideSavedStateHandle():SavedStateHandle{
     return SavedStateHandle()
 }

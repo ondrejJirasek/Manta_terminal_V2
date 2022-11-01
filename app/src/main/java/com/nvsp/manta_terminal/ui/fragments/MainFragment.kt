@@ -124,7 +124,7 @@ class MainFragment :
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
+        Log.e("EVENT", "MainOnCreate")
 
         super.onCreate(savedInstanceState)
 
@@ -134,6 +134,7 @@ class MainFragment :
     companion object;
 
     override fun onResume() {
+        Log.e("EVENT", "MainOnResume")
         refreshData()
         CoroutineScope(Dispatchers.IO).launch {
             WebSocketManager.connect()
@@ -142,16 +143,19 @@ class MainFragment :
     }
 
     override fun onPause() {
+        Log.e("EVENT", "MainOnPause")
         WebSocketManager.close()
         super.onPause()
     }
 
     override fun onAttach(context: Context) {
+        Log.e("EVENT", "MainOnAttach")
         super.onAttach(context)
         lifecycle.addObserver(this)
     }
 
     override fun onDetach() {
+        Log.e("EVENT", "MainOnDetach")
         super.onDetach()
         lifecycle.removeObserver(this)
     }
@@ -160,6 +164,7 @@ class MainFragment :
         get() = FragmentMainBinding::inflate
 
     override fun initViews() {
+        Log.e("EVENT", "MainInitViews")
         initAdapter()
         viewModel.activeSetting.observe(viewLifecycleOwner){
 
@@ -198,8 +203,15 @@ class MainFragment :
 
         viewModel.workplaces.observe(this) {
             Log.d("WORPLACES", "New Worplaces: ${it.size} items ")
-            it.forEach {
-                Log.d("WORPLACES", " ${it}  ")
+            if(it.isNotEmpty())
+                if(wpAdapter.selectedItem==null)
+                    wpAdapter.selectedItem= it[0]
+            it.forEach {wp->
+
+                Log.d("WORPLACES", " ${wp}  ")
+                if(wpAdapter.selectedItem ==wp) selectedWorkplace(wp)
+
+
             }
             wpAdapter.setNewList(it.toMutableList())
         }
@@ -285,19 +297,28 @@ class MainFragment :
                 WebSocketManager.connect()
             }
      //   }
-        viewModel.login.value?.let {
-            viewModel.loadMenu(item.id, it.role?:(0)){error->
-                infoDialog.showWithMessage("badConfig"){
-                    activity?.finishAffinity()
+        setInfoWp(item)
+        if(viewModel.selectedWPId !=item.id) {
+            viewModel.selectedWPId = item.id
+            viewModel.login.value?.let {
+                viewModel.loadMenu(item.id, it.role ?: (0)) { error ->
+                    infoDialog.showWithMessage("badConfig") {
+                        activity?.finishAffinity()
+                    }
                 }
+
             }
-
-
+            refreshData()
         }
 
+
+
+
+    }
+
+    fun setInfoWp(item:Workplace){
         binding.apply {
-            viewModel.selectedWPId = item.id
-            refreshData()
+
             tvWorkplace.text = item.lname
 
             if (item.notificationStatus) {
@@ -320,28 +341,8 @@ class MainFragment :
                 tvWorkplaceState.visibility = View.INVISIBLE
             }
 
-
-
-          /*  if (item.state != "--") {
-                tvWorkplaceState.text = item.state
-                if (item.state.isNotEmpty()) {
-                    tvWorkplaceState.visibility = View.VISIBLE
-                    tvWorkplaceState.backgroundTintList = ColorStateList.valueOf(item.getColorHex())
-                } else {
-                  //  context?.let {
-                        tvWorkplaceState.visibility = View.INVISIBLE
-                   // }
-                }
-            } else
-                context?.let {
-                    tvWorkplaceState.text = ""
-                    tvWorkplaceState.visibility = View.INVISIBLE
-                }*/
         }
-
-
     }
-
     private fun initAdapter() {
         binding.operatornRecycler.let {
             val lm = LinearLayoutManager(context)
