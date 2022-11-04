@@ -42,8 +42,7 @@ import com.nvsp.manta_terminal.ui.activities.MainActivity
 import com.nvsp.manta_terminal.viewmodels.MainFragmentViewModel
 import com.nvsp.manta_terminal.workplaces.Workplace
 import com.nvsp.manta_terminal.workplaces.WorkplaceAdapter
-import com.nvsp.nvmesapplibrary.TITAN_CLASS
-import com.nvsp.nvmesapplibrary.TITAN_ID
+import com.nvsp.nvmesapplibrary.*
 import com.nvsp.nvmesapplibrary.architecture.BaseFragment
 import com.nvsp.nvmesapplibrary.communication.socket.MessageListener
 import com.nvsp.nvmesapplibrary.communication.socket.WebSocketManager
@@ -62,6 +61,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class MainFragment :
     BaseFragment<FragmentMainBinding, MainFragmentViewModel>(MainFragmentViewModel::class),
@@ -413,12 +413,15 @@ class MainFragment :
     }
 
     override fun onMessage(text: String?) {
-        addText( " Receive message: $text \n " )
+
         //todo zpracovani dat -> idealne VM
             text?.let {
-
-
-                viewModel.socketDataProcessing(it)
+                val json = JSONObject(text)
+                val wp = json.getInt("workplaceId")
+                if(wp ==viewModel.selectedWPId) {
+                    addText( " Receive message: $text \n " )
+                    viewModel.socketDataProcessing(json)
+                }
             }
 
     }
@@ -574,13 +577,13 @@ class MainFragment :
             in 1000 ..99999->{//prostoje
                 writeIdle(button.objectId)
             }
-            Const.TITAN_EVIDENCE->{
+            TITAN_EVIDENCE->{
                 launchEvidenceTitan()
             }
-            Const.DOCUMENTATION->{
+            DOCUMENTATION->{
                 showDocumentation()
             }
-            Const.EVIDENCE_STANDARD->{
+           EVIDENCE_STANDARD->{
                 val action = MainFragmentDirections.actionMainFragmentToEvidence(
                     workplaceID = viewModel.selectedWPId,
                     teamWorking = viewModel.workplaces.value?.find { it.id == viewModel.selectedWPId }?.teamWorking?:(false),

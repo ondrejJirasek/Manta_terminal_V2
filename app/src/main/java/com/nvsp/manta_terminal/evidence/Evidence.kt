@@ -50,6 +50,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         super.onCreate(savedInstanceState)
         viewModel.wpId = args.workplaceID
         viewModel.teamWorking = args.teamWorking
+        selectedOperation=null
     }
 
     override val bindingInflater: (LayoutInflater) -> FragmentEvidenceBinding
@@ -122,6 +123,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         viewModel.activeOperationList.observe(viewLifecycleOwner){
             if (it.size==1)
                 onOperClick(it[0])
+
             activeOperationAdapter.setNewItems(it)
         }
     }

@@ -102,27 +102,34 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
             }
         }
     }
-    fun socketDataProcessing(data:String){
-        val json = JSONObject(data)
+    fun socketDataProcessing(json:JSONObject){
+
         val editableList = json.getJSONObject("editableListData")
         val workplacesJson = json.getJSONArray("deviceWorkplaces")
         val employees = json.getJSONArray("employeesOnWp")
         val buttons = json.getJSONArray("buttonsOnWp")
         val gson = Gson()
-        //fillemployee
-        val itemTypeOp = object : TypeToken<List<Operator>>(){}.type
-        operatorsList.postValue( gson.fromJson<List<Operator>>(employees.toString(),itemTypeOp))
 
-        //workplaces
-        val itemTypeWp = object : TypeToken<List<Workplace>>(){}.type
-        workplaces.postValue( gson.fromJson<List<Workplace>>(workplacesJson.toString(),itemTypeWp))
 
-        //buttons
-        menuDef?.let { def->
-            menu.postValue(MenuButtonTerm.createList(buttons, def))
-        }
-        //editableList
-        contentWQ.postValue(ViewData.createList(definitonsWQ,editableList, gridWQ))
+            //fillemployee
+            val itemTypeOp = object : TypeToken<List<Operator>>() {}.type
+            operatorsList.postValue(gson.fromJson<List<Operator>>(employees.toString(), itemTypeOp))
+
+            //workplaces
+            val itemTypeWp = object : TypeToken<List<Workplace>>() {}.type
+            workplaces.postValue(
+                gson.fromJson<List<Workplace>>(
+                    workplacesJson.toString(),
+                    itemTypeWp
+                )
+            )
+
+            //buttons
+            menuDef?.let { def ->
+                menu.postValue(MenuButtonTerm.createList(buttons, def))
+            }
+            //editableList
+            contentWQ.postValue(ViewData.createList(definitonsWQ, editableList, gridWQ))
 
     }
 
