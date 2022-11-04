@@ -15,6 +15,7 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import com.nvsp.manta_terminal.BaseApp
 import com.nvsp.manta_terminal.BuildConfig
 import com.nvsp.manta_terminal.R
@@ -73,6 +74,8 @@ class MainActivity : AppCompatActivity() {
 
         mViewModel.login.observe(this){
             Log.d("LOGIN", "loginState: ${it}")
+
+
             setUser(it)
         }
         startActivityForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -106,7 +109,11 @@ class MainActivity : AppCompatActivity() {
                 startSettings()
                 true  }
             R.id.action_LogOut->{
+
+
+
                 lifecycleScope.launch {  mViewModel.logOut() }
+
                 true
             }
             R.id.action_finish->{
@@ -117,6 +124,8 @@ class MainActivity : AppCompatActivity() {
                 Log.d("LOGIN", "user: ${mViewModel.login.value}")
                 if(mViewModel.login.value!=null){
                     lifecycleScope.launch {  mViewModel.logOut() }
+
+
                 }else{
                     startLoginActivity()
                 }
@@ -174,6 +183,9 @@ class MainActivity : AppCompatActivity() {
             menu?.findItem(R.id.action_login)?.setIcon(R.drawable.ic_baseline_logout_24)
         }?:run {
             menu?.findItem(R.id.action_login)?.setIcon(R.drawable.ic_user)
+
+
+
         }
     }
     fun setBackButtonVisibility(state:Boolean){
