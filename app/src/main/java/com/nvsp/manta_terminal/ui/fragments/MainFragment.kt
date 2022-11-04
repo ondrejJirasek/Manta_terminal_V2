@@ -9,15 +9,9 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.transition.Fade
-import android.transition.TransitionManager
 import android.util.Log
 import android.view.*
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.AlphaAnimation
-import android.view.animation.AnimationSet
 import android.view.animation.AnimationUtils
-import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,17 +22,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.zxing.integration.android.IntentIntegrator
-import com.nvsp.LOGIN_OPERATION
-import com.nvsp.MODE_QUEUE
-import com.nvsp.TEAM_WORKING
-import com.nvsp.WORKPLACE_ID
+import com.nvsp.*
+import com.nvsp.nvmesapplibrary.DOCUMENTATION
+import com.nvsp.nvmesapplibrary.EVIDENCE_STANDARD
+import com.nvsp.nvmesapplibrary.TITAN_EVIDENCE
 import com.nvsp.manta_terminal.BaseApp
 import com.nvsp.manta_terminal.Const
 import com.nvsp.manta_terminal.R
 import com.nvsp.manta_terminal.adapters.OperatorAdapter
 import com.nvsp.manta_terminal.databinding.DialogFillQrLogOperationBinding
 import com.nvsp.manta_terminal.databinding.FragmentMainBinding
-import com.nvsp.manta_terminal.ui.activities.MainActivity
 import com.nvsp.manta_terminal.viewmodels.MainFragmentViewModel
 import com.nvsp.manta_terminal.workplaces.Workplace
 import com.nvsp.manta_terminal.workplaces.WorkplaceAdapter
@@ -277,7 +270,7 @@ class MainFragment :
         Log.e("WORKPACES", "SELECT WORKPLACE $item")
         val url = viewModel.activeSetting.value?.getIpAndPort()
         val devId = BaseApp.remoteSettings?.id
-
+        //viewModel.selectedWPId = item.id
 
       //  WebSocketManager.close()
         //val urlAddress = "ws://192.168.1.16:8089/api/Weighing/RequestNotification/4AS9934"
@@ -432,18 +425,23 @@ class MainFragment :
         Log.e("SOCKET", "SOCKET MESSAGE: $text")
     }
     private fun toogleSocketLed(){
+        try {
         binding.iwSocket.visibility=View.VISIBLE
 
         val fadeIn = AnimationUtils.loadAnimation(context, R.anim.fade_in_led)
         val fadeOut = AnimationUtils.loadAnimation(context, R.anim.fade_out_led)
 
-        binding.iwSocket.startAnimation(fadeIn)
-        Handler(Looper.getMainLooper()).postDelayed({
-            binding.iwSocket.startAnimation(fadeOut)
-        }, 1000)
-        Handler(Looper.getMainLooper()).postDelayed({
-            binding.iwSocket.visibility=View.INVISIBLE
-        }, 1600)
+            binding.iwSocket.startAnimation(fadeIn)
+            Handler(Looper.getMainLooper()).postDelayed({
+                binding.iwSocket.startAnimation(fadeOut)
+            }, 1000)
+            Handler(Looper.getMainLooper()).postDelayed({
+                binding.iwSocket.visibility=View.INVISIBLE
+            }, 1600)
+        }catch (e:Exception){
+            Log.e("stateSocket", "$e")
+        }
+
 
 
         }

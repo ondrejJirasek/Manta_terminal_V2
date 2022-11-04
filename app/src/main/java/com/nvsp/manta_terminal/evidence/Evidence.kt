@@ -14,6 +14,8 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -58,6 +60,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
 
     override fun initViews() {
         viewModel.loadDefectCodes()
+        viewModel.loadShifts()
         when(args.mode){
             Const.MODE_EVIDENCE_HEI->{
                 binding.btnOkCycles.visibility= View.GONE
@@ -65,6 +68,11 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             Const.MODE_EVIDENCE_HEN->{
                 binding.btnOkCycles.visibility= View.VISIBLE
             }
+        }
+        viewModel.workShifts.observe(viewLifecycleOwner){
+            val adapter = ArrayAdapter(requireContext(),
+                android.R.layout.simple_dropdown_item_1line, it)
+            binding.spShits.adapter = adapter
         }
         binding.edCount.setOnEditorActionListener { textView, i, keyEvent ->
             if(i== EditorInfo.IME_ACTION_DONE)
@@ -90,16 +98,21 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         }
         }
         binding.btnNOKCount.setOnClickListener { showNokDialog() }
+        binding.btnEvidence.setOnClickListener {
 
-
+            viewModel.evidence() {
+                findNavController().navigateUp()
+            }
+        }
     //    viewModel.loadDefectCodes()
         setOkEnabled(false)
         setOkCyclesEnabled(false)
         setNOKEnabled(false)
         viewModel.login.observe(viewLifecycleOwner){it1->
+
             it1?.let{
                 viewModel.loadActiveOperation(args.teamWorking, args.workplaceID, it.idEmployee!!.toInt())
-            }
+            }?: kotlin.run {        findNavController().navigate(R.id.mainFragment) }
         }
         initRecyclers()
         with(binding) {
@@ -338,6 +351,8 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             return when (position) {
               //  0 -> return FillOperation()
                 1 -> return NokItemsFragment()
+                2 -> return ConsumptionFragment()
+                3 -> return EvidenceFragment()
                 else -> Fragment()
             }
         }

@@ -32,4 +32,16 @@
     <string name="nonReparaible">Neopravitelné</string>
     <string name="internalReparaible">Interně opravitelné</string>
     <string name="photo">Foto</string>
+
+    <string name="batch">Šarže</string>
+    <string name="place">Umístění</string>
+    <string name="name">Název</string>
+    <string name="warehouse">Skladem</string>
+    <string name="toIssue">K výdeji</string>
+    <string name="Issue">Výdej</string>
+    <string name="mj">MJ</string>
+
+    <string name="fillConsumption">Zadání spotřeby</string>
+    <string name="residueToIssue">Zbývá k výdeji</string>
+    <string name="residue">Zbytek</string>
 </resources>
