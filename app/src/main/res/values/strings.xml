@@ -42,6 +42,7 @@
     <string name="mj">MJ</string>
 
     <string name="fillConsumption">Zadání spotřeby</string>
+    <string name="apkNotInstalled">Aplikace %s není nainstalována!</string>
     <string name="residueToIssue">Zbývá k výdeji</string>
     <string name="residue">Zbytek</string>
 </resources>

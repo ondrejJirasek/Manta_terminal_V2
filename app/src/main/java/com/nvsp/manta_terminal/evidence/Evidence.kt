@@ -48,11 +48,17 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
 
         })
     }
+
+    override fun onDestroyView() {
+        selectedOperation=null
+        super.onDestroyView()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel.wpId = args.workplaceID
         viewModel.teamWorking = args.teamWorking
         selectedOperation=null
+        viewModel.count=1
     }
 
     override val bindingInflater: (LayoutInflater) -> FragmentEvidenceBinding
@@ -134,7 +140,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         viewModel.onProgressActive.observe(viewLifecycleOwner){binding.refOperation.isRefreshing=it}
         binding.refOperation.setOnRefreshListener { viewModel.loadActiveOperation(args.teamWorking, args.workplaceID, (viewModel.login.value?.idEmployee?:(0)).toInt())  }
         viewModel.activeOperationList.observe(viewLifecycleOwner){
-            if (it.size==1)
+            if (it.isNotEmpty()&& selectedOperation==null)
                 onOperClick(it[0])
 
             activeOperationAdapter.setNewItems(it)
@@ -349,7 +355,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-              //  0 -> return FillOperation()
+                0 -> return EvidenceInfoFragment()
                 1 -> return NokItemsFragment()
                 2 -> return ConsumptionFragment()
                 3 -> return EvidenceFragment()

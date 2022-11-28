@@ -93,6 +93,16 @@
                         android:textColor="@color/aqua"
                         android:textSize="16dp" />
 
+                    <ImageButton
+                        android:id="@+id/ibRefresh"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@color/zxing_transparent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_refresh"
+                        android:tint="@color/zxing_possible_result_points" />
+
                     <ImageView
                         android:id="@+id/iwSocket"
                         android:layout_width="50dp"

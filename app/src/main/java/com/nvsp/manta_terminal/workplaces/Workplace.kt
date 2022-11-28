@@ -39,5 +39,6 @@ data class Workplace(
     }
     companion object{
         fun getUrl(id:Long):String = "Devices/$id/Workplaces"
+        fun getUrlForWP(id:Long, wpId:Int):String = "Devices/$id/Workplaces?workplaceId=$wpId"
     }
 }

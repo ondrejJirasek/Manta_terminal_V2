@@ -3,7 +3,7 @@ package com.nvsp.manta_terminal.evidence.models
 import com.google.gson.annotations.SerializedName
 
 data class Batch (
-    @SerializedName("structuredId")
+    @SerializedName("structureId")
     val structureId:Int,
     @SerializedName("operationId")
     val operationId:Int,

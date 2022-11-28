@@ -7,12 +7,16 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
+import androidx.core.content.FileProvider
 import com.nvsp.manta_terminal.di.*
 import com.nvsp.manta_terminal.ui.activities.MainActivity
 import com.nvsp.nvmesapplibrary.App
 import com.nvsp.nvmesapplibrary.constants.Keys
+import com.nvsp.nvmesapplibrary.utils.CommonUtils
 import com.nvsp.nvmesapplibrary.utils.model.RemoteSettings
 import org.intellij.lang.annotations.Language
 import org.koin.android.ext.koin.androidContext
@@ -35,9 +39,18 @@ class BaseApp : Application() {
         super.onCreate()
         instance=this
         appContext = applicationContext
-        guid=android.provider.Settings.Secure.getString(appContext.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+        //guid=CommonUtils.getHostname(this)
+        Log.e("IDS", "dev:${Build.DEVICE}, model: ${Build.MODEL}, host: ${Build.HOST} BT:${Settings.Secure.getString(
+            contentResolver, "bluetooth_name")} other name : ${Settings.Global.getString(
+            contentResolver, Settings.Global.DEVICE_NAME)}")
+                //android.provider.Settings.Secure.getString(appContext.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
         App.params(appContext,Const.dbName)
         startKoin()
+
+       // val serial = Build.getSerial()
+     //   Log.d("UNIQUE ID", "Serial nuber is: $serial")
+
+
     }
 
     fun startKoin(){

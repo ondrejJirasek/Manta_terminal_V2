@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Handler
@@ -38,8 +39,9 @@ import com.nvsp.manta_terminal.workplaces.WorkplaceAdapter
 import com.nvsp.nvmesapplibrary.*
 import com.nvsp.nvmesapplibrary.architecture.BaseFragment
 import com.nvsp.nvmesapplibrary.communication.socket.MessageListener
-import com.nvsp.nvmesapplibrary.communication.socket.WebSocketManager
+import com.nvsp.nvmesapplibrary.details.DetailGeneric
 import com.nvsp.nvmesapplibrary.documentation.DocumentActivity
+import com.nvsp.nvmesapplibrary.documentation.ID_OPERATION
 import com.nvsp.nvmesapplibrary.documentation.OPERATOR_DOC
 import com.nvsp.nvmesapplibrary.menu.MenuButtonTerm
 import com.nvsp.nvmesapplibrary.menu.MenuDef
@@ -53,7 +55,6 @@ import com.nvsp.nvmesapplibrary.views.NButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class MainFragment :
@@ -61,15 +62,14 @@ class MainFragment :
     MessageListener {
 
 
-
-   private  val barcode=MutableLiveData<String>("")
+   private  val barcode=MutableLiveData("")
    private  val wpAdapter: WorkplaceAdapter by lazy {
         WorkplaceAdapter {
             Log.d("SELECTED ITEM:","Select $it")
             selectedWorkplace(it)
         }
     }
-    var resultLauncher =
+   private var resultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 refreshData()
@@ -98,7 +98,7 @@ class MainFragment :
     }
    private  val adapterWQ: QueueAdapter by lazy {
         QueueAdapter(context, OPERATOR_MAIN_NOT_LOGGED,
-            { queueData, i ->  //item Click
+            { _, _ ->  //item Click
             }, { _, _ -> //item Long Click
             }, { item ->
                 viewModel.logOutOperation(item.getId().toInt(), viewModel.selectedWPId) {
@@ -110,6 +110,7 @@ class MainFragment :
     private val adapterOperator: OperatorAdapter by lazy {
         OperatorAdapter(context, OPERATOR_MAIN_NOT_LOGGED, mutableListOf(),
             { item ->  //item Click
+                viewModel.getOperatorsOperation(item.id)
             }, { item -> //remove
                 viewModel.logoutOperator(item.id)
 
@@ -129,15 +130,15 @@ class MainFragment :
     override fun onResume() {
         Log.e("EVENT", "MainOnResume")
         refreshData()
-        CoroutineScope(Dispatchers.IO).launch {
+        /*CoroutineScope(Dispatchers.IO).launch {
             WebSocketManager.connect()
-        }
+        }*/
         super.onResume()
     }
 
     override fun onPause() {
         Log.e("EVENT", "MainOnPause")
-        WebSocketManager.close()
+       // WebSocketManager.close()
         super.onPause()
     }
 
@@ -163,18 +164,20 @@ class MainFragment :
 
 
         }
-
+        binding.ibRefresh.setOnClickListener {
+            refreshData()
+        }
         viewModel.login.observe(viewLifecycleOwner) { usr ->
 
             if (usr == null) {
                 adapterWQ.changeMode(OPERATOR_MAIN_NOT_LOGGED)
-                adapterOperator.changeMode(OPERATOR_MAIN_NOT_LOGGED, usr?.idEmployee)
+                adapterOperator.changeMode(OPERATOR_MAIN_NOT_LOGGED, null)
                 hideMenu()
             } else {
 
                 adapterWQ.changeMode(OPERATOR_MAIN_LOGGED)
                 adapterOperator.changeMode(OPERATOR_MAIN_LOGGED, usr.idEmployee)
-                viewModel.loadMenu(viewModel.selectedWPId, usr.role?:(0)){error->
+                viewModel.loadMenu(viewModel.selectedWPId, usr.role?:(0)){
                     infoDialog.showWithMessage(getString(R.string.badConfig)){
                         activity?.finishAffinity()
                     }
@@ -195,21 +198,22 @@ class MainFragment :
         }
 
         viewModel.workplaces.observe(this) {
-            Log.d("WORPLACES", "New Worplaces: ${it.size} items ")
+            Log.d("WORPLACES", "New Worplaces: ${it.size} items  selected: ${wpAdapter.selectedItem}")
             if(it.isNotEmpty())
                 if(wpAdapter.selectedItem==null)
                     wpAdapter.selectedItem= it[0]
             it.forEach {wp->
-
-                Log.d("WORPLACES", " ${wp}  ")
+                Log.d("WORPLACES", " $wp  ")
                 if(wpAdapter.selectedItem ==wp) selectedWorkplace(wp)
-
-
             }
             wpAdapter.setNewList(it.toMutableList())
         }
         viewModel.onProgressWQ.observe(viewLifecycleOwner) {
             binding.operRefresher.isRefreshing = it
+        }
+        viewModel.markedOperations.observe(viewLifecycleOwner){
+            adapterWQ.markOperation(it)
+
         }
         viewModel.contentWQ.observe(viewLifecycleOwner) {
             if (it.isNotEmpty())
@@ -251,13 +255,17 @@ class MainFragment :
         viewModel.menu.observe(viewLifecycleOwner){btnList->
             viewModel.menuDef?.let {btnDef->
                 showMenu(btnDef,btnList)
-            }
+            }?: kotlin.run { hideMenu() }
         }
     }
 
     private fun refreshData() {
         viewModel.loadContent(user = viewModel.login.value)
         viewModel.loadEmployees()
+        viewModel.workplaceStatus(){
+            setInfoWp(it)
+        }
+
     }
 
     override fun onActivityCreated() {
@@ -271,7 +279,8 @@ class MainFragment :
         val url = viewModel.activeSetting.value?.getIpAndPort()
         val devId = BaseApp.remoteSettings?.id
         //viewModel.selectedWPId = item.id
-
+        adapterWQ.markOperation(emptyList())
+        adapterOperator.selectedItem=null
       //  WebSocketManager.close()
         //val urlAddress = "ws://192.168.1.16:8089/api/Weighing/RequestNotification/4AS9934"
         val urlAddress= if(viewModel.login.value?.role==null)
@@ -280,26 +289,26 @@ class MainFragment :
             "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?roleId=${viewModel.login.value?.role}&editableListId=$WORK_QUEUE_ID"///&editableListFilterJson=[]"//[{argumentKey:WorkplaceID,argumentValue:${item.id}}]"
 
         Log.d("SOCKET INIT", "ip and port:$urlAddress ")
-        WebSocketManager.close()
-      /*  if(WebSocketManager.isConnect())
-            WebSocketManager.changeURL(urlAddress)
-        else {*/
-            WebSocketManager.init(urlAddress, this)
+        /*   WebSocketManager.close()
+         if(WebSocketManager.isConnect())
+              WebSocketManager.changeURL(urlAddress)
+          else {*/
+        /*    WebSocketManager.init(urlAddress, this)
 
             CoroutineScope(Dispatchers.IO).launch {
-                WebSocketManager.connect()
+                WebSocketManager.connect(urlAddress,false)
             }
-     //   }
+     //   }*/
         setInfoWp(item)
         if(viewModel.selectedWPId !=item.id) {
             viewModel.selectedWPId = item.id
             viewModel.login.value?.let {
-                viewModel.loadMenu(item.id, it.role ?: (0)) { error ->
-                    infoDialog.showWithMessage("badConfig") {
-                        activity?.finishAffinity()
+                viewModel.loadMenu(item.id, it.role ?: (0)) {
+                    infoDialog.showWithMessage(getString(R.string.badConfig)) {
+                        hideMenu()
+                       // activity?.finishAffinity()
                     }
                 }
-
             }
             refreshData()
         }
@@ -309,9 +318,9 @@ class MainFragment :
 
     }
 
-    fun setInfoWp(item:Workplace){
+    private fun setInfoWp(item:Workplace){
         binding.apply {
-
+            Log.d("SELECTEDWP", "SELECT WP: $item")
             tvWorkplace.text = item.lname
 
             if (item.notificationStatus) {
@@ -466,22 +475,25 @@ class MainFragment :
         }
     }
 
-    fun showAddOperationDialog(){
-        var id:Int?=null
+   private fun showAddOperationDialog(){
+       // var id:Int?=null
         val builder = AlertDialog.Builder(context)
             .create()
         val bindingDialog = DialogFillQrLogOperationBinding.inflate(LayoutInflater.from(context))
         builder.setView(bindingDialog.root)
 
         fun verifyOperation(){
-            viewModel.verifyOperationCode(bindingDialog.edBarcode.text.toString()){
-                if(it>0){
+            viewModel.verifyAndLoginOperation(bindingDialog.edBarcode.text.toString()){
+                builder.dismiss()
+                refreshData()
+               /* if(it>0){
                     id=it
-                    bindingDialog.btnOk.isEnabled=true
+
+                   // bindingDialog.btnOk.isEnabled=true
                 }else {
                     id=null
                     bindingDialog.btnOk.isEnabled=false
-                }
+                }*/
             }
         }
 
@@ -512,12 +524,11 @@ class MainFragment :
                 false
             }
             btnOk.setOnClickListener {
-                id?.let {id->
+             /*   id?.let {id->
                     viewModel.loginOperation(id){
                         refreshData()
                     }
-                }
-
+                }*/
                 builder.dismiss()
             }
         }
@@ -571,7 +582,7 @@ class MainFragment :
 
     private fun onClick(button: MenuButtonTerm) {
         Log.d("BTN MENU CLICK", "click on :I${button.objectId}")
-        when(button.objectId.toInt()){
+        when(button.objectId){
             in 1000 ..99999->{//prostoje
                 writeIdle(button.objectId)
             }
@@ -580,6 +591,9 @@ class MainFragment :
             }
             DOCUMENTATION->{
                 showDocumentation()
+            }
+            INFO->{
+                showInfo()
             }
            EVIDENCE_STANDARD->{
                 val action = MainFragmentDirections.actionMainFragmentToEvidence(
@@ -597,6 +611,22 @@ class MainFragment :
     private fun writeIdle(id:Int){
         viewModel.writeIdle(id)
     }
+    private fun showInfo(){
+
+            adapterWQ.selectedItemId?.let{
+                val intent = Intent(activity, DetailGeneric::class.java)
+                val b = Bundle()
+
+                b.putInt("IdOperation", it.toInt()) //Your id
+
+                intent.putExtras(b) //Put your id to your next Intent
+                startActivity(intent)
+            }?: kotlin.run {
+                infoDialog.showWithMessage(getString(R.string.operatrionNotSelect)){
+
+                }
+            }
+    }
 private fun showDocumentation(){
     if(adapterWQ.selectedItemId!=null){
 
@@ -605,7 +635,7 @@ private fun showDocumentation(){
 
         val operation = viewModel.contentWQ.value?.find { it.getId()== adapterWQ.selectedItemId}
         b.putInt("MODE", OPERATOR_DOC)
-        //todo zpracovat parametry
+        b.putInt(ID_OPERATION, (operation?.getId()?:(-1)).toInt())
 
      //   b.putString("IdProductOrder",operation?.getByColumn("ID_ProductOrder"))
      //   b.putInt("IdOperation", adapterOperation.rowID) //Your id
@@ -617,31 +647,52 @@ private fun showDocumentation(){
 
         }
     }
-
-
-
 }
 
     private fun launchEvidenceTitan(){
-        val sendIntent = Intent(Intent.ACTION_MAIN)
-        sendIntent.setComponent(ComponentName(TITAN_ID, TITAN_CLASS))
-        viewModel.login.value?.fillIntent(sendIntent)
-        sendIntent.putExtra(WORKPLACE_ID, viewModel.selectedWPId)
-        sendIntent.putExtra(TEAM_WORKING, viewModel.workplaces.value?.find { it.id == viewModel.selectedWPId }?.teamWorking)
-        /* val sendIntent = requireActivity().packageManager.getLaunchIntentForPackage("com.nvsp.sico")
+       // if(isPackageInstalled(TITAN_ID, requireContext().packageManager)) {
+        try {
+            val sendIntent = Intent(Intent.ACTION_MAIN)
+            sendIntent.component = ComponentName(TITAN_ID, TITAN_CLASS)
+            viewModel.login.value?.fillIntent(sendIntent)
+            sendIntent.putExtra(WORKPLACE_ID, viewModel.selectedWPId)
+            sendIntent.putExtra(
+                TEAM_WORKING,
+                viewModel.workplaces.value?.find { it.id == viewModel.selectedWPId }?.teamWorking
+            )
+            /* val sendIntent = requireActivity().packageManager.getLaunchIntentForPackage("com.nvsp.sico")
          viewModel.login.value?.fillIntent(sendIntent)*/
-        startActivity(sendIntent)
+            startActivity(sendIntent)
+            /*  }else{
+
+        }*/
+        }catch (e:Exception){
+            Log.e("startAPK", "chyba:$e")
+            infoDialog.showWithMessage(getString(R.string.apkNotInstalled, TITAN_ID)){}
+        }
+
     }
 
 
 
-    private fun launchExternalModule(appId:String, appClass:String){
+   /* private fun launchExternalModule(appId:String, appClass:String){
+
         val sendIntent = Intent(Intent.ACTION_MAIN)
         sendIntent.setComponent(ComponentName(appId, appClass))
         viewModel.login.value?.fillIntent(sendIntent)
         /* val sendIntent = requireActivity().packageManager.getLaunchIntentForPackage("com.nvsp.sico")
          viewModel.login.value?.fillIntent(sendIntent)*/
         startActivity(sendIntent)
-    }
+    }*/
+ private fun isPackageInstalled (packageName:String, packageManager: PackageManager):Boolean{
+     return try {
+         packageManager.getPackageInfo(packageName,PackageManager.GET_ACTIVITIES)
+         true
+     }catch (e:PackageManager.NameNotFoundException){
+         Log.e("startAPK", "chyba:$e")
+         false
+     }
+ }
+
 
 }

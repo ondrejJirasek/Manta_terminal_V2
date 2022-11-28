@@ -1,7 +1,6 @@
 package com.nvsp.manta_terminal.viewmodels
 
 import android.util.Log
-import android.view.Menu
 import androidx.lifecycle.MutableLiveData
 import com.android.volley.Request
 import com.google.gson.Gson
@@ -14,7 +13,6 @@ import com.nvsp.nvmesapplibrary.architecture.CommunicationViewModel
 import com.nvsp.nvmesapplibrary.communication.volley.ServiceVolley
 import com.nvsp.nvmesapplibrary.database.LibRepository
 import com.nvsp.nvmesapplibrary.login.models.User
-import com.nvsp.nvmesapplibrary.menu.MenuButton
 import com.nvsp.nvmesapplibrary.menu.MenuButtonTerm
 import com.nvsp.nvmesapplibrary.menu.MenuDef
 import com.nvsp.nvmesapplibrary.queue.models.*
@@ -31,6 +29,7 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
     val menu= MutableLiveData<Array<Array<MenuButtonTerm>>>()
     var menuDef : MenuDef?=null
     val operatorsList = MutableLiveData<List<Operator>>()
+    val markedOperations = MutableLiveData<List<Int>>()
     val onProgressWQ = MutableLiveData<Boolean>(false)
     val onProgressOP = MutableLiveData<Boolean>(false)
     var gridWQ: EditableModuleLayoutDefinition = EditableModuleLayoutDefinition(0, 0)
@@ -52,6 +51,21 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
             Log.d("LOADER", "item size:${list.size}")
             workplaces.value=(list)
         }
+    }
+    fun workplaceStatus(wp:(Workplace)->Unit){
+        api.request(
+            com.nvsp.nvmesapplibrary.communication.models.Request(
+                Request.Method.GET,
+                Workplace.getUrlForWP(BaseApp.remoteSettings?.id?:(-1), selectedWPId),""
+            )
+        ){ code, response ->
+            val gson = Gson()
+            if((response.array?.length() ?: (0)) > 0){
+                val item = gson.fromJson(response.getSingleObject().toString(), Workplace::class.java)
+                wp(item)
+            }
+            }
+
     }
     fun loadDefs(user: User?=null, idWP:Int) {
         onProgressWQ.value=true
@@ -93,11 +107,11 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
                 ViewData.generateParam(0, user?.id, SystemFilters.getJsonArray(jsonFilter))
             ), showProgress = false
         ) { _, response ->
+            onProgressWQ.value=false
             response.getSingleObject()?.let {
                 //dataMaxSize.value = QueueData.getDataSize(it)
                // isNextAvalaible= QueueData.getNextAvalaible(it)
                 contentWQ.value = ViewData.createList(definitonsWQ,it, gridWQ)
-                onProgressWQ.value=false
 
             }
         }
@@ -133,12 +147,6 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
 
     }
 
-    fun logOutOperation(id:Int, selectedWPId:Int, ret:(Boolean)->Unit){
-        OutData.logInOutOperationParams(login.value?.idEmployee, login = false, idWP = selectedWPId, idOperation = id)
-        OutData.execute(api){ i, apiResponse ->
-            ret(i==200)
-        }
-    }
     fun loadEmployees(){
         onProgressOP.value=true
         api.request(
@@ -170,6 +178,23 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
             refreshData()
         }
     }
+    fun getOperatorsOperation(id:Int){
+        val rpc = Rpc("SPMANTA_Operation_EmployeeOnWP")
+        val params = mutableListOf<RpcParam>()
+        params.add(RpcParam.putInt("EmployeeID", id))
+        params.add(RpcParam.putInt("WorkPlaceID", selectedWPId))
+        rpc.addParams(params)
+        rpc.execute(api) { code, response ->
+            Log.d("OPERATIONS", "Operation operator: $response")
+            response.array?.let {
+                val ids= mutableListOf<Int>()
+                for(i in 0 until it.length()){
+                    ids.add(it.getJSONObject(i).getInt("ID"))
+                }
+                markedOperations.value=ids
+            }
+        }
+    }
     fun loadMenu(wpId:Int, role:Long, error:(Boolean)->Unit){
         api.request(
             com.nvsp.nvmesapplibrary.communication.models.Request(
@@ -181,9 +206,10 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
             val gson = Gson()
             val obj= response.getSingleObject()
             obj?.let {
-                if(obj.isNull("menuDefinition"))
+                if(obj.isNull("menuDefinition")) {
+                    menuDef=null
                     error(true)
-                else {
+                }else {
                     menuDef = gson.fromJson(
                         obj.getJSONObject("menuDefinition").toString(),
                         MenuDef::class.java
@@ -199,13 +225,13 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
                                 def
                             )
                         )
-                    }
+                    }?: kotlin.run { menuDef=null}
                 }
             }
         }
 
     }
-    fun verifyOperationCode(code:String, ret:(Int)->Unit){
+    fun verifyAndLoginOperation(code:String, ret:(Int)->Unit){
         val rpc = Rpc("SPMANTA_FindOpBarCode")
         val params = mutableListOf<RpcParam>()
         params.add(RpcParam.putInt("TerminalID", (BaseApp.remoteSettings?.id?:(1)).toInt()))
@@ -215,13 +241,21 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
         rpc.addParams(params)
         rpc.execute(api) { code, response ->
             response.getSingleObject()?.let {
-                ret(it.getInt("ID"))
+                ret(it.getInt("ID")) // todo muze vratit pole a zahajim vse
             }
 
         }
     }
     fun loginOperation(id:Int,  ret:(Boolean)->Unit){
-        OutData.logInOutOperationParams(login.value?.idEmployee, login = true, idWP = selectedWPId, idOperation = id)
+        val team = workplaces.value?.find { it.id==selectedWPId }?.teamWorking?:(false)
+        OutData.logInOutOperationParams(login.value?.idEmployee, login = true, idWP = selectedWPId, idOperation = id, team)
+        OutData.execute(api){ i, apiResponse ->
+            ret(i==200)
+        }
+    }
+    fun logOutOperation(id:Int, selectedWPId:Int, ret:(Boolean)->Unit){
+        val team = workplaces.value?.find { it.id==selectedWPId }?.teamWorking?:(false)
+        OutData.logInOutOperationParams(login.value?.idEmployee, login = false, idWP = selectedWPId, idOperation = id, team)
         OutData.execute(api){ i, apiResponse ->
             ret(i==200)
         }

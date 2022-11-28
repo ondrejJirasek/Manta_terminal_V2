@@ -37,6 +37,7 @@ data class ActiveOperation(
     val workplaceId:Int?,
     @SerializedName("teamWorking")
     val teamWorking:Boolean?,
+    // todo dodat parametr  ktery resi vrati hodnotu kterou predvyplním do pole počet k evidenci (davka)
 ){
     companion object{
         fun getUrl(team:Boolean, wpId: Int, emplId:Int):String{

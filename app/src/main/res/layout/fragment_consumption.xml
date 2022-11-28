@@ -46,7 +46,7 @@
             android:clickable="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_add"
-            android:tint="@color/NVSPGreen"
+
             app:layout_constraintBottom_toBottomOf="@+id/refConsumption"
             app:layout_constraintStart_toStartOf="parent" />
 
@@ -59,7 +59,7 @@
             android:clickable="true"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_issue"
-            android:tint="@color/NVSPGreen"
+
             app:layout_constraintBottom_toTopOf="@+id/btnAddConsumption"
             app:layout_constraintStart_toStartOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>

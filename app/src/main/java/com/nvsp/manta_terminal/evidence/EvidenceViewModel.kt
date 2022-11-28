@@ -21,6 +21,8 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
     var wpId: Int = -1
     var count:Int = 1
     val onProgressNOK = MutableLiveData<Boolean>(false)
+    val onProgressCons = MutableLiveData<Boolean>(false)
+
     val onProgressActive = MutableLiveData<Boolean>(false)
     val defectCodes = MutableLiveData<List<DefectCode>>()
     val activeOperationList = MutableLiveData<List<ActiveOperation>>()
@@ -28,6 +30,7 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
     val nokList = MutableLiveData<List<NokItems>>()
     val workShifts = MutableLiveData<List<WorkShift>>()
     val batchs = MutableLiveData<List<Batch>>()
+    val consumptions = MutableLiveData<List<ConsumptionRecord>>()
     fun loadDefectCodes() {
         api.request(
             com.nvsp.nvmesapplibrary.communication.models.Request(
@@ -154,7 +157,75 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
 
         }
     }
-    fun postConsumption(batch:Batch, issue:Double?, res:Double?,ret: (Boolean) -> Unit){
+    fun loadConsumption() {
+        onProgressCons.postValue(true)
+    api.request(
+    com.nvsp.nvmesapplibrary.communication.models.Request(
+    Request.Method.GET,
+    ConsumptionRecord.getURL(selectedOperation?.operationId ?: (-1), wpId),
+    "",
+    login.value,
+    null
+    ),
+    showProgress = false,
+    hideProgressOnEnd = true
+    ) { code, response ->
+        onProgressCons.postValue(false)
+        val itemType = object : TypeToken<List<ConsumptionRecord>>() {}.type
+        consumptions.value = gson.fromJson(response.array.toString(), itemType)
+    }
+}
+    fun consumptionLock(id:Int, state:Boolean){
+
+        api.request(
+            com.nvsp.nvmesapplibrary.communication.models.Request(
+                Request.Method.PATCH,
+                ConsumptionRecord.getLockUrl(id, state),
+                "",
+                login.value,
+                null
+            ),
+            showProgress = true,
+            hideProgressOnEnd = true
+        ) { code, response ->
+
+
+        }
+    }
+    fun removeCons(id:Int, ret: (Boolean) -> Unit){
+        api.request(
+            com.nvsp.nvmesapplibrary.communication.models.Request(
+                Request.Method.DELETE,
+                ConsumptionRecord.getDeleteUrl(id),
+                "",
+                login.value,
+                null
+            ),
+            showProgress = true,
+            hideProgressOnEnd = true
+        ) { code, response ->
+            ret(code==200)
+           loadConsumption()
+        }
+    }
+    fun issueComp(){
+        api.request(
+            com.nvsp.nvmesapplibrary.communication.models.Request(
+                Request.Method.POST,
+                "WorkRecord/VydejKomponenty?operationId=${selectedOperation?.operationId}&workplaceId=${wpId}",
+                "",
+                login.value,
+                null
+            ),
+            showProgress = false,
+            hideProgressOnEnd = true
+        ) { code, response ->
+            loadConsumption()
+        }
+    }
+
+    fun postConsumption(batchWarehouseId:Int, batchStructureId:Int, issue:Double?, res:Double?,ret: (Boolean) -> Unit){
+        Log.d("CONSUMPTION", "batch WHID: $batchWarehouseId, structureID: $batchStructureId, issue: $issue")
         val json= JSONObject(     """{
             "terminalId": ${BaseApp.remoteSettings?.id?:(-1)},
             "employeeId": ${login.value?.idEmployee},
@@ -162,8 +233,8 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
             "operationId": ${selectedOperation?.operationId},
             "wpId": ${wpId},
             "quantity": $issue,
-            "warehouseSelectionId": ${batch.warehouseSelectionId},
-            "structuredId": ${batch.structureId},
+            "warehouseSelectionId": $batchWarehouseId,
+            "structureId": ${batchStructureId},
             "variationId":0 
         }"""   )
         api.request(
@@ -175,6 +246,32 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
                 json),
             showProgress = true,
             hideProgressOnEnd = true){code, _ ->
+            ret(code==200)
+            loadConsumption()
+        }
+    }
+    fun updateConsumption(id:Int, batchWarehouseId:Int, batchStructureId:Int, issue:Double?, res:Double?,ret: (Boolean) -> Unit){
+        val json= JSONObject(     """{
+            "terminalId": ${BaseApp.remoteSettings?.id?:(-1)},
+            "employeeId": ${login.value?.idEmployee},
+            "productOrderId": ${selectedOperation?.productOrderId},
+            "operationId": ${selectedOperation?.operationId},
+            "wpId": ${wpId},
+            "quantity": $issue,
+            "warehouseSelectionId": $batchWarehouseId},
+            "structuredId": ${batchStructureId},
+            "variationId":0 
+        }"""   )
+        api.request(
+            com.nvsp.nvmesapplibrary.communication.models.Request(
+                Request.Method.PATCH,
+                "WorkRecord/MaterialConsumption/$id",
+                "",
+                login.value,
+                json),
+            showProgress = true,
+            hideProgressOnEnd = true){code, _ ->
+            loadConsumption()
             ret(code==200)
         }
 

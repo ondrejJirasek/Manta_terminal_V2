@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import com.android.volley.Request
 import com.google.gson.Gson
 import com.nvsp.manta_terminal.BaseApp
+import com.nvsp.manta_terminal.BuildConfig
 
 import com.nvsp.nvmesapplibrary.architecture.BaseViewModel
 import com.nvsp.nvmesapplibrary.constants.Const
@@ -19,7 +20,9 @@ import com.nvsp.nvmesapplibrary.communication.volley.ServiceVolley
 import com.nvsp.nvmesapplibrary.communication.volley.VolleySingleton
 import com.nvsp.nvmesapplibrary.rpc.OutData
 import com.nvsp.nvmesapplibrary.utils.CommonUtils
+import com.nvsp.nvmesapplibrary.utils.model.ApkInfo
 import com.nvsp.nvmesapplibrary.utils.model.RemoteSettings
+import com.nvsp.nvmesapplibrary.utils.updater.Updater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,10 +44,11 @@ const val NOT_LOADED_REMOTE_SETTING=104
 
 class SplashViewModel(private val repository: LibRepository): BaseViewModel(repository){
     var splasCheckstatus= MutableLiveData<Int>(0)
-
+    val updater: Updater by lazy { Updater(api) }
     val api :ServiceVolley by lazy { ServiceVolley(VolleySingleton.getInstance(), BaseApp.instance.urlApi) }
 
     fun loadSettings(set:Settings){
+        BaseApp.instance.guid=set.uId
         Const.URL_BASE = set.baseUrl()
         BaseApp.instance.urlApi=set.baseUrl()
         Log.d("URL", "URL IS: ${Const.URL_BASE}")
@@ -68,7 +72,7 @@ class SplashViewModel(private val repository: LibRepository): BaseViewModel(repo
           com.nvsp.nvmesapplibrary.communication.models.Request(
               Request.Method.POST,
           "Devices/CheckRegistration","",
-              json = CommonUtils.getRegisterJson(context)
+              json = CommonUtils.getRegisterJson(context,BaseApp.instance.guid )
           )
         ){code, response ->
             val remoteSettings=Gson().fromJson(response.getSingleObject().toString(),RemoteSettings::class.java)
@@ -82,9 +86,15 @@ class SplashViewModel(private val repository: LibRepository): BaseViewModel(repo
 
 
     }
-fun testVersion(){
-    splasCheckstatus.postValue(UPDATED)
+fun testVersion(ret:(ApkInfo?, Boolean, Boolean)->Unit){
+    updater.checkVersion(){apk, apkExist,error ->
+        Log.d("APK","APK:${apk?.version} ACTUAL VERSION :${BuildConfig.VERSION_CODE}")
+        ret(apk, apkExist, error)
+    }
 }
+    fun downloadFile(context:Context){
+        updater.enqueueDownload(context)
+    }
     fun testConnection(ip:String, port: Int?){
         CoroutineScope(Dispatchers.IO).launch {
             var numOfLostPacket=0
