@@ -14,6 +14,13 @@ class WorkplaceAdapter(val selectItemCallback:(Workplace)->Unit) : RecyclerView.
     private var wpList= mutableListOf<Workplace>()
     var selectedItem:Workplace?=null
 
+    fun setNewItem(wp:Workplace){
+       val oldItem =wpList.find { it.id ==wp.id }
+        val index = wpList.indexOf(oldItem)
+        wpList[index] = wp
+        notifyItemChanged(index)
+    }
+
     fun setNewList(dataSetNew: MutableList<Workplace>){
         val diffUtil = DiffUtil.calculateDiff(object : DiffUtil.Callback(){
             override fun getOldListSize(): Int {
@@ -38,7 +45,11 @@ class WorkplaceAdapter(val selectItemCallback:(Workplace)->Unit) : RecyclerView.
                         wpList[oldItemPosition].notificationStatus == dataSetNew[newItemPosition].notificationStatus&&
                         wpList[oldItemPosition].code == dataSetNew[newItemPosition].code&&
                         wpList[oldItemPosition].lname == dataSetNew[newItemPosition].lname&&
-                        wpList[oldItemPosition].state == dataSetNew[newItemPosition].state
+                        wpList[oldItemPosition].state == dataSetNew[newItemPosition].state &&
+                        wpList[oldItemPosition].typeLoginOp == dataSetNew[newItemPosition].typeLoginOp&&
+                        wpList[oldItemPosition].locationAfterId == dataSetNew[newItemPosition].locationAfterId&&
+                        wpList[oldItemPosition].locationBeforeId == dataSetNew[newItemPosition].locationBeforeId&&
+                        wpList[oldItemPosition].selectLoginOp == dataSetNew[newItemPosition].selectLoginOp
 
             }
 
@@ -78,7 +89,15 @@ class WorkplaceAdapter(val selectItemCallback:(Workplace)->Unit) : RecyclerView.
         fun bind(wpBeam: Workplace, isSelected:Boolean) {
             itemBinding.apply {
                 tvWorkplaceLabel.text = wpBeam.code
-                tvWorkplaceLabel.setTextColor(wpBeam.getColorHex())
+              //  tvWorkplaceLabel.setTextColor(wpBeam.getColorHex())
+                val statusColor = wpBeam.getColorHex()
+                statusColor?.let {
+                    statusBar.setBackgroundColor (statusColor)
+                }?: kotlin.run {
+                    root.setBackgroundColor(ContextCompat.getColor(App.appContext,R.color.zxing_transparent))
+                }
+
+
 
                 if(isSelected){
                     root.background= (ContextCompat.getDrawable(App.appContext,R.drawable.background_dark_radius_top_no_border))

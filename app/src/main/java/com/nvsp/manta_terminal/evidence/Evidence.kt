@@ -2,6 +2,7 @@ package com.nvsp.manta_terminal.evidence
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.ContextMenu
@@ -30,7 +31,9 @@ import com.nvsp.manta_terminal.databinding.FragmentEvidenceBinding
 import com.nvsp.manta_terminal.databinding.ItemOperationBinding
 import com.nvsp.manta_terminal.evidence.models.ActiveOperation
 import com.nvsp.nvmesapplibrary.architecture.BaseFragment
-
+import com.nvsp.nvmesapplibrary.documentation.DocumentActivity
+import com.nvsp.nvmesapplibrary.documentation.ID_OPERATION
+import com.nvsp.nvmesapplibrary.documentation.OPERATOR_DOC
 
 
 class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(EvidenceViewModel::class) {
@@ -79,6 +82,9 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             val adapter = ArrayAdapter(requireContext(),
                 android.R.layout.simple_dropdown_item_1line, it)
             binding.spShits.adapter = adapter
+        }
+        binding.btnDocsEvidence.setOnClickListener {
+            showDocumentation()
         }
         binding.edCount.setOnEditorActionListener { textView, i, keyEvent ->
             if(i== EditorInfo.IME_ACTION_DONE)
@@ -157,8 +163,29 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             setHasFixedSize(true)
             adapter = activeOperationAdapter
         }
-
     }
+    private fun showDocumentation(){
+        if(selectedOperation!=null){
+            val intent = Intent(activity, DocumentActivity::class.java)
+            val b = Bundle()
+
+            val operation = selectedOperation
+            b.putInt("MODE", OPERATOR_DOC)
+            b.putInt(ID_OPERATION, (operation?.operationId?:(-1)))
+
+            //   b.putString("IdProductOrder",operation?.getByColumn("ID_ProductOrder"))
+            //   b.putInt("IdOperation", adapterOperation.rowID) //Your id
+            //    b.putString("NameOperation", operation?.getByColumn("Name_Operation"))
+            intent.putExtras(b) //Put your id to your next Intent
+            startActivity(intent)
+        }else{
+            infoDialog.showWithMessage(getString(R.string.operatrionNotSelect)){
+
+            }
+        }
+    }
+
+
     private fun showNokDialog(){
 
         val builder = AlertDialog.Builder(context)
@@ -309,13 +336,30 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
                 tvNok.text = item.nok.toString()
                 tvLive.text=item.operationQuantity.toString()
                 Log.d("selectOp", "selected OP: ${selectedOperation?.operationId} actual ${item.operationId}")
-                if(selectedOperation?.operationId==item.operationId){
-                    holder.binding.layOper.setBackgroundColor(resources.getColor(com.nvsp.nvmesapplibrary.R.color.aquariumAlpha40))
-                }else
-                    holder.binding.layOper.setBackgroundColor(resources.getColor(com.google.android.material.R.color.mtrl_btn_transparent_bg_color))
-                //  ivCon.setImageResource()
+
+
+
+
+                    holder.binding.layOper.setBackgroundColor(getBackgroundColor(item))
+
             }
         }
+fun getBackgroundColor(item:ActiveOperation):Int{
+    val color =
+        if(selectedOperation?.operationId==item.operationId){
+            if(item.ok+item.nok>item.operationQuantity)
+                resources.getColor(com.nvsp.nvmesapplibrary.R.color.mixedAquaRed,null)
+            else
+                resources.getColor(com.nvsp.nvmesapplibrary.R.color.aquariumAlpha40,null)
+    }else{
+            if(item.ok+item.nok>item.operationQuantity)
+                resources.getColor(com.nvsp.nvmesapplibrary.R.color.lightRed,null)
+            else
+                resources.getColor(com.nvsp.nvmesapplibrary.R.color.mtrl_btn_transparent_bg_color,null)
+    }
+return color
+}
+
 
         override fun getItemCount(): Int {
             return dataset.size

@@ -13,28 +13,41 @@ data class Workplace(
     val lname:String,
     @SerializedName("state")
     val state:String,
-    @SerializedName("color")
-    val color:Int,
+    @SerializedName("color") //todo konvert na HEX RGB
+    val color:Int?,
     @SerializedName("isRobot")
     val isRobot: Boolean,
     @SerializedName("notificationStatus")
     val notificationStatus:Boolean,
     @SerializedName("teamWorking")
-    val teamWorking:Boolean
+    val teamWorking:Boolean,
+    @SerializedName("locationBeforeId")
+    val locationBeforeId:Int,
+    @SerializedName("locationAfterId")
+    val locationAfterId:Int,
+    @SerializedName("typeLoginOp")
+    val typeLoginOp:Int,
+    @SerializedName("selectLoginOp")
+    val selectLoginOp:Int,
+    @SerializedName("unitId")
+    val unitId:Int
+
 ){
 
 
-    fun getColorHex():Int{
+    fun getColorHex():Int?{
         //   val hexVal = Integer.toHexString(color)
         // return (0xff000000 + Integer.parseInt(hexVal,16)).toInt()
-        val hexVal = color.toString()
-        val r= (color ) and 0xff
-        val g = (color shr 8) and 0xff
-        val b = (color shr 16) and 0xff
+        color?.let { val hexVal = color.toString()
+            val r= (color ) and 0xff
+            val g = (color shr 8) and 0xff
+            val b = (color shr 16) and 0xff
+            return android.graphics.Color.rgb(r,g,b)}?: kotlin.run { return null }
+
 
        // Log.d(TAG, "HEX: $hexVal R:$r G:$g B:$b")
         //    (0xff000000 + Integer.parseInt(hexVal, 16)).toInt()*/
-        return android.graphics.Color.rgb(r,g,b)
+
 
     }
     companion object{

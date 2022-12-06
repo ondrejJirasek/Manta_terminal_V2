@@ -178,7 +178,6 @@
                     android:imeOptions="actionDone"
                     android:inputType="numberDecimal"
 
-
                     android:selectAllOnFocus="true"
                     android:singleLine="true"
                     android:text="0" />

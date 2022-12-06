@@ -9,6 +9,8 @@ import com.nvsp.manta_terminal.BaseApp
 import com.nvsp.manta_terminal.models.Operator
 import com.nvsp.manta_terminal.workplaces.Workplace
 import com.nvsp.nvmesapplibrary.architecture.CommunicationViewModel
+import com.nvsp.nvmesapplibrary.communication.socket.WebSocketClient2
+import com.nvsp.nvmesapplibrary.communication.socket.WebSocketClientService
 
 import com.nvsp.nvmesapplibrary.communication.volley.ServiceVolley
 import com.nvsp.nvmesapplibrary.database.LibRepository
@@ -31,13 +33,46 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
     val operatorsList = MutableLiveData<List<Operator>>()
     val markedOperations = MutableLiveData<List<Int>>()
     val onProgressWQ = MutableLiveData<Boolean>(false)
+    val onProcessSocket = MutableLiveData<Boolean>(false)
     val onProgressOP = MutableLiveData<Boolean>(false)
     var gridWQ: EditableModuleLayoutDefinition = EditableModuleLayoutDefinition(0, 0)
     var definitonsWQ: List<ViewDefinition> = emptyList()
     val contentWQ = MutableLiveData<List<ViewData>>(mutableListOf())
 
 
+    private val webSocket2: WebSocketClient2 by lazy { WebSocketClient2(){ retMessage->
+        Log.d("MESSAGE", "RECEIVED ON MAIN: $retMessage")
+        onProcessSocket.postValue(true)
+        parseData(retMessage)
 
+    } }
+
+    fun webSocketClose(){
+        webSocket2.close()
+
+    }
+    fun webSocketInit(url:String,port:Int) {
+      //  webSocket.initWebSocket(getURLForSocket(url,BaseApp.remoteSettings?.id, selectedWPId))
+
+        webSocket2.init(getURLForSocket(url,BaseApp.remoteSettings?.id, selectedWPId, port))
+        webSocket2.connect()
+    }
+    fun connectToSocket(url:String,port:Int){
+
+        webSocket2.connect(getURLForSocket(url,BaseApp.remoteSettings?.id, selectedWPId,port))
+
+    }
+    fun changeWP(wpId:Int){
+        webSocket2.setWP(wpId)
+    }
+
+   private fun getURLForSocket(url:String,devId:Long?,wp:Int ,port:Int):String{
+
+        return    if(login.value?.role==null)
+        "ws://$url:$port/API/Devices/$devId/Status/Workplace/${wp}?editableListId=$WORK_QUEUE_ID&editableListFilterJson=[{argumentKey:WorkplaceID,argumentValue:${wp}}]"
+    else
+        "ws://$url:$port/API/Devices/$devId/Status/Workplace/${wp}?roleId=${login.value?.role}&editableListId=$WORK_QUEUE_ID&editableListFilterJson=[{argumentKey:WorkplaceID,argumentValue:${wp}}]"
+    }
     fun loadWorkplaces(){
         api.request(
             com.nvsp.nvmesapplibrary.communication.models.Request(
@@ -53,6 +88,7 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
         }
     }
     fun workplaceStatus(wp:(Workplace)->Unit){
+        if(selectedWPId>0)
         api.request(
             com.nvsp.nvmesapplibrary.communication.models.Request(
                 Request.Method.GET,
@@ -66,6 +102,9 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
             }
             }
 
+    }
+    fun getSelectedWP():Workplace?{
+       return  workplaces.value?.find { it.id==selectedWPId }
     }
     fun loadDefs(user: User?=null, idWP:Int) {
         onProgressWQ.value=true
@@ -124,7 +163,7 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
         val buttons = json.getJSONArray("buttonsOnWp")
         val gson = Gson()
 
-
+         //   onProcessSocket.value=false
             //fillemployee
             val itemTypeOp = object : TypeToken<List<Operator>>() {}.type
             operatorsList.postValue(gson.fromJson<List<Operator>>(employees.toString(), itemTypeOp))
@@ -271,6 +310,15 @@ class MainFragmentViewModel (private val repository: LibRepository, private val 
         loadWorkplaces()
         loadContent( user = login.value)
 
+
+    }
+    fun parseData(mess:String) {
+       // onProcessSocket.value=true
+        val json = JSONObject(mess)
+     //   val wp = json.getInt("workplaceId")
+         //   if(wp ==selectedWPId) {
+                socketDataProcessing(json)
+               //     }
 
     }
     }

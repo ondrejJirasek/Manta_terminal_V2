@@ -36,7 +36,7 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
             com.nvsp.nvmesapplibrary.communication.models.Request(
                 Request.Method.GET,
                 DEFECT_CODE,
-                "",
+                "?workplaceId=$wpId",
                 login.value,
                 null
             ),
@@ -295,4 +295,19 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
             ret(code==200)
         }
     }
+    fun generateOkLabels(operationId:Int, quantity:Double, number:Int,ret:(Boolean)->Unit){
+        val rpc = Rpc("SPMANTA_GenerateOKLabel")
+        val params = mutableListOf<RpcParam>()
+        params.add(RpcParam.putInt("TerminalId",BaseApp.remoteSettings?.id?.toInt() ))
+        params.add(RpcParam.putInt("EmployeeID",login.value?.idEmployee?.toInt() ))
+       params.add(RpcParam.putInt("operationId", operationId))
+        params.add(RpcParam.putDouble("Quantity", quantity))
+        params.add(RpcParam.putInt("Number ", number))
+        rpc.addParams(params)
+        rpc.execute(api,true) { code, response ->
+            ret(200==code)
+        }
+
+    }
+
 }

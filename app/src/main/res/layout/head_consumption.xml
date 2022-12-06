@@ -4,7 +4,7 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/textView10"
+        android:id="@+id/tvDetailHead"
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -13,7 +13,7 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/textView14"
+        android:id="@+id/tvDetailValue"
         android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"

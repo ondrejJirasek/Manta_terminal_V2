@@ -24,6 +24,9 @@
     <string name="nok">NOK</string>
     <string name="consumption">Spotřeba</string>
     <string name="evidence">Evidence</string>
+    <string name="evidencePrint">Evidence + Tisk</string>
+    <string name="numberToprint">Počet Ks. ve štítku</string>
+    <string name="badValues">Špatně vyplněné hodnoty!</string>
     <string name="type">Typ</string>
     <string name="sector">Sektor</string>
     <string name="evidenceNOK">Evidence NOK kusů</string>
@@ -43,6 +46,6 @@
 
     <string name="fillConsumption">Zadání spotřeby</string>
     <string name="apkNotInstalled">Aplikace %s není nainstalována!</string>
-    <string name="residueToIssue">Zbývá k výdeji</string>
-    <string name="residue">Zbytek</string>
+    <string name="residueToIssue">Nevydáno</string>
+    <string name="residue">Zbytek skladu po výdeji</string>
 </resources>

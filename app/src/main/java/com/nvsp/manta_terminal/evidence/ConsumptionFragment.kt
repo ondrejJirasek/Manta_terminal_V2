@@ -166,9 +166,12 @@ private fun showAddDialog(cons:ConsumptionRecord?=null){
             barcode.value = bindDial.edBarcode.text.toString()
         false
     }
-    barcode.observe(viewLifecycleOwner){
-        Log.d("BArcode", "code #$it#")
-        verifyBarcode(it)
+    barcode.observe(viewLifecycleOwner){bar->
+        bar?.let {
+            Log.d("BArcode", "code #$it#")
+            verifyBarcode(it)
+        }
+
     }
 
 
@@ -181,7 +184,6 @@ private fun showAddDialog(cons:ConsumptionRecord?=null){
         false
     }
     bindDial.edIssueConsDialog.setOnEditorActionListener { textView, i, keyEvent ->
-
         if(bindDial.edIssueConsDialog.text.toString().toDouble()>stock)
             bindDial.edIssueConsDialog.setText(stock.toString())
      

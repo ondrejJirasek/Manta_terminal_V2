@@ -11,15 +11,47 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/btnEvidence"
-            android:layout_width="150dp"
+            android:id="@+id/btnEvidencePrint"
+            android:layout_width="180dp"
             android:layout_height="50dp"
+            android:layout_marginEnd="16dp"
             android:layout_weight="1"
             android:background="@drawable/button_blue"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnEvidence">
+
+            <ImageView
+                android:id="@+id/imageView11"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_margin="8dp"
+                android:layout_weight="1"
+                android:src="@drawable/ic_check"
+                android:tint="@color/ocean"
+                android:tintMode="src_atop" />
+
+            <TextView
+                android:id="@+id/textView41"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:text="@string/evidencePrint"
+                android:textAllCaps="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btnEvidence"
+            android:layout_width="180dp"
+            android:layout_height="50dp"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:background="@drawable/button_blue"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toTopOf="@+id/btnEvidencePrint"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView

@@ -14,7 +14,7 @@ data class ActiveOperation(
     @SerializedName("operationName")
     val operationName:String,
     @SerializedName("operationQuantity")
-    val operationQuantity:Double?,
+    val operationQuantity:Double,
     @SerializedName("outDataId")
     val outDataId:Int?,
     @SerializedName("ok")

@@ -38,7 +38,9 @@ import com.nvsp.manta_terminal.workplaces.Workplace
 import com.nvsp.manta_terminal.workplaces.WorkplaceAdapter
 import com.nvsp.nvmesapplibrary.*
 import com.nvsp.nvmesapplibrary.architecture.BaseFragment
+import com.nvsp.nvmesapplibrary.architecture.InfoDialog
 import com.nvsp.nvmesapplibrary.communication.socket.MessageListener
+import com.nvsp.nvmesapplibrary.communication.socket.WebSocketClientService
 import com.nvsp.nvmesapplibrary.details.DetailGeneric
 import com.nvsp.nvmesapplibrary.documentation.DocumentActivity
 import com.nvsp.nvmesapplibrary.documentation.ID_OPERATION
@@ -130,6 +132,22 @@ class MainFragment :
     override fun onResume() {
         Log.e("EVENT", "MainOnResume")
         refreshData()
+viewModel.activeSetting.observe(viewLifecycleOwner){set->
+   // val url = viewModel.activeSetting.value?.ipAddress
+    set?.let {
+        if(it.autorefresh==1)
+            it.socketPort?.let { socketPort->
+                viewModel.connectToSocket(it.ipAddress, socketPort)
+            }?:kotlin.run {
+                infoDialog.showWithMessage(getString(R.string.badport),com.nvsp.nvmesapplibrary.constants.Const.LEVEL_ERROR){}
+            } }
+
+        //viewModel.webSocketInit(it.ipAddress)
+
+    }
+
+
+
         /*CoroutineScope(Dispatchers.IO).launch {
             WebSocketManager.connect()
         }*/
@@ -139,6 +157,7 @@ class MainFragment :
     override fun onPause() {
         Log.e("EVENT", "MainOnPause")
        // WebSocketManager.close()
+       viewModel.webSocketClose()
         super.onPause()
     }
 
@@ -163,6 +182,11 @@ class MainFragment :
         viewModel.activeSetting.observe(viewLifecycleOwner){
 
 
+        }
+        viewModel.onProcessSocket.observe(viewLifecycleOwner){
+            Log.d("SOCKET", "socket process:$it")
+            if(it)
+            toogleSocketLed()
         }
         binding.ibRefresh.setOnClickListener {
             refreshData()
@@ -240,7 +264,14 @@ class MainFragment :
             viewModel.loginOperator()
         }
         binding.ibAddOperation.setOnClickListener {
-            showAddOperationDialog()
+            Log.e("SELECT OPERATIONLOGIN", "selectedOper ${viewModel.getSelectedWP()}\n par:${viewModel.getSelectedWP()?.typeLoginOp}")
+            when(viewModel.getSelectedWP()?.typeLoginOp){
+
+                Const.LOGIN_OPERATION_BY_QR-> { showAddOperationDialog()}
+                Const.LOGIN_OPERATION_BY_LIST->{chooseFromList()}
+                else->{showAddOperationDialog()}
+            }
+           // showAddOperationDialog()
 
         }
         binding.operRefresher.setOnRefreshListener {
@@ -263,6 +294,7 @@ class MainFragment :
         viewModel.loadContent(user = viewModel.login.value)
         viewModel.loadEmployees()
         viewModel.workplaceStatus(){
+            wpAdapter.setNewItem(it)
             setInfoWp(it)
         }
 
@@ -276,19 +308,19 @@ class MainFragment :
 
     private fun selectedWorkplace(item: Workplace) {
         Log.e("WORKPACES", "SELECT WORKPLACE $item")
-        val url = viewModel.activeSetting.value?.getIpAndPort()
-        val devId = BaseApp.remoteSettings?.id
+       // val url = viewModel.activeSetting.value?.getIpAndPort()
+    //    val devId = BaseApp.remoteSettings?.id
         //viewModel.selectedWPId = item.id
         adapterWQ.markOperation(emptyList())
         adapterOperator.selectedItem=null
       //  WebSocketManager.close()
         //val urlAddress = "ws://192.168.1.16:8089/api/Weighing/RequestNotification/4AS9934"
-        val urlAddress= if(viewModel.login.value?.role==null)
-            "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?editableListId=$WORK_QUEUE_ID"
-        else
-            "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?roleId=${viewModel.login.value?.role}&editableListId=$WORK_QUEUE_ID"///&editableListFilterJson=[]"//[{argumentKey:WorkplaceID,argumentValue:${item.id}}]"
+      //  val urlAddress= if(viewModel.login.value?.role==null)
+      //      "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?editableListId=$WORK_QUEUE_ID"
+      //  else
+      //      "ws://$url/API/Devices/$devId/Status/Workplace/${item.id}?roleId=${viewModel.login.value?.role}&editableListId=$WORK_QUEUE_ID"///&editableListFilterJson=[]"//[{argumentKey:WorkplaceID,argumentValue:${item.id}}]"
 
-        Log.d("SOCKET INIT", "ip and port:$urlAddress ")
+       // Log.d("SOCKET INIT", "ip and port:$urlAddress ")
         /*   WebSocketManager.close()
          if(WebSocketManager.isConnect())
               WebSocketManager.changeURL(urlAddress)
@@ -299,6 +331,8 @@ class MainFragment :
                 WebSocketManager.connect(urlAddress,false)
             }
      //   }*/
+     //   if(item.id!=0)
+        viewModel.changeWP(item.id)
         setInfoWp(item)
         if(viewModel.selectedWPId !=item.id) {
             viewModel.selectedWPId = item.id
@@ -337,7 +371,7 @@ class MainFragment :
             if(item.state.isNotEmpty()){
                 tvWorkplaceState.text = item.state
                 tvWorkplaceState.visibility = View.VISIBLE
-                tvWorkplaceState.backgroundTintList = ColorStateList.valueOf(item.getColorHex())
+                tvWorkplaceState.backgroundTintList = ColorStateList.valueOf(item.getColorHex()?:(com.nvsp.nvmesapplibrary.R.color.zxing_transparent))
             }else{
                 tvWorkplaceState.text = ""
                 tvWorkplaceState.visibility = View.INVISIBLE
@@ -447,6 +481,7 @@ class MainFragment :
             Handler(Looper.getMainLooper()).postDelayed({
                 binding.iwSocket.visibility=View.INVISIBLE
             }, 1600)
+            viewModel.onProcessSocket.value=false
         }catch (e:Exception){
             Log.e("stateSocket", "$e")
         }
@@ -475,6 +510,15 @@ class MainFragment :
         }
     }
 
+    private fun chooseFromList(){
+
+        val intent = Intent(context, WorkQueueActivity::class.java).apply {
+            putExtra(MODE_QUEUE, LOGIN_OPERATION)
+            putExtra(WORKPLACE_ID, viewModel.selectedWPId)
+        }
+        resultLauncher.launch(intent)
+
+    }
    private fun showAddOperationDialog(){
        // var id:Int?=null
         val builder = AlertDialog.Builder(context)
@@ -502,11 +546,8 @@ class MainFragment :
                 builder.dismiss()
             }
             btnChooseFromList.setOnClickListener {
-                val intent = Intent(context, WorkQueueActivity::class.java).apply {
-                    putExtra(MODE_QUEUE, LOGIN_OPERATION)
-                    putExtra(WORKPLACE_ID, viewModel.selectedWPId)
-                }
-                resultLauncher.launch(intent)
+
+                chooseFromList()
                 builder.dismiss()
             }
             bindingDialog.rfidInputLayout.setEndIconOnClickListener {
@@ -616,9 +657,7 @@ class MainFragment :
             adapterWQ.selectedItemId?.let{
                 val intent = Intent(activity, DetailGeneric::class.java)
                 val b = Bundle()
-
                 b.putInt("IdOperation", it.toInt()) //Your id
-
                 intent.putExtras(b) //Put your id to your next Intent
                 startActivity(intent)
             }?: kotlin.run {
@@ -660,6 +699,7 @@ private fun showDocumentation(){
                 TEAM_WORKING,
                 viewModel.workplaces.value?.find { it.id == viewModel.selectedWPId }?.teamWorking
             )
+            sendIntent.putExtra(SETTINGS, viewModel.activeSetting.value?.toJson())
             /* val sendIntent = requireActivity().packageManager.getLaunchIntentForPackage("com.nvsp.sico")
          viewModel.login.value?.fillIntent(sendIntent)*/
             startActivity(sendIntent)
