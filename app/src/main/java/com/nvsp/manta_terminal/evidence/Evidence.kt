@@ -1,8 +1,10 @@
 package com.nvsp.manta_terminal.evidence
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.ContextMenu
@@ -11,6 +13,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -24,21 +28,27 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import com.nvsp.REMOVE
+import com.nvsp.manta_terminal.BaseApp
 import com.nvsp.manta_terminal.Const
 import com.nvsp.manta_terminal.R
 import com.nvsp.manta_terminal.databinding.DialogDefectBinding
 import com.nvsp.manta_terminal.databinding.FragmentEvidenceBinding
 import com.nvsp.manta_terminal.databinding.ItemOperationBinding
 import com.nvsp.manta_terminal.evidence.models.ActiveOperation
+import com.nvsp.manta_terminal.ui.activities.MainActivity
+import com.nvsp.nvmesapplibrary.App
 import com.nvsp.nvmesapplibrary.architecture.BaseFragment
 import com.nvsp.nvmesapplibrary.documentation.DocumentActivity
 import com.nvsp.nvmesapplibrary.documentation.ID_OPERATION
 import com.nvsp.nvmesapplibrary.documentation.OPERATOR_DOC
+import com.nvsp.nvmesapplibrary.utils.CapturePhoto
+import com.nvsp.nvmesapplibrary.utils.TempFile
+import java.io.File
 
 
 class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(EvidenceViewModel::class) {
 
-
+    private var tempPhotoFile= TempFile()
     private val args: EvidenceArgs by navArgs()
     companion object{
         var selectedOperation:ActiveOperation?=null
@@ -205,6 +215,18 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             }
             builder.dismiss()
         }
+        bindDial.btnPhotoDefect.setOnClickListener {
+            context?.let {con->
+                viewModel.login.value?.let { usr->
+                    viewModel.selectedOperation?.let { oper ->
+                       val takePictureIntent= CapturePhoto.capturePhoto(tempPhotoFile, activity as AppCompatActivity, App.appId)
+                           photoResult.launch(takePictureIntent)
+                    }
+                }
+
+            }
+
+        }
         bindDial.spDefect.addTextChangedListener {
             bindDial.btnDialogFillDefect.isEnabled=!it.isNullOrEmpty()
         }
@@ -216,6 +238,22 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         }
         builder.show()
 
+    }
+    private var photoResult = this.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            //  val intentResult = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+            Log.d("PHOTO", "return From Capture")
+            //if(intentResult.contents != null) {
+            val bitmap= BitmapFactory.decodeFile(tempPhotoFile.file?.path)
+            context?.let { con->
+                viewModel.login.value?.let { user->
+                    CapturePhoto.photoDialog("tabPrikaz",viewModel.getApi(),user,  bitmap,con, layoutInflater, viewModel.selectedOperation?.productOrderId?:(-1))
+                }
+            }
+
+
+            // }
+        }
     }
     private fun getCount():Int{
         return  if(binding.edCount.text.isNullOrEmpty())
@@ -241,6 +279,11 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
         setNOKEnabled(true)
         setOkCyclesEnabled(item.teamWorking?:(false))
         //todo Udelat refresher pro zalozky
+        viewModel.loadNok(viewModel.teamWorking,item.operationId,(viewModel.login?.value?.idEmployee?:(0)).toInt(),viewModel.wpId )
+        viewModel.loadConsumption()
+
+
+
 
       //  viewModel.loadNok(MainActivity.teamWorking,item.operationId,(viewModel.login?.value?.idEmployee?:(0)).toInt(),MainActivity.wpId  )
     }
@@ -274,6 +317,7 @@ class Evidence : BaseFragment<FragmentEvidenceBinding, EvidenceViewModel>(Eviden
             }
         }
     }
+
     inner class ActiveOperationAdapter(val context: Context?, val dataset:MutableList<ActiveOperation>, val click:(item: ActiveOperation)->Unit, val action:(item: ActiveOperation, mode:Int)->Unit): RecyclerView.Adapter<ActiveOperationAdapter.Holder>() {
 
         inner class Holder(itemView: View) : RecyclerView.ViewHolder(itemView),

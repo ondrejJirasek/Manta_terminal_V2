@@ -48,6 +48,7 @@ class EvidenceViewModel(repository: LibRepository, private val api: ServiceVolle
             defectCodes.value = gson.fromJson(response.array.toString(), itemType)
         }
     }
+    fun getApi():ServiceVolley = api
     fun loadShifts() {
         api.request(
             com.nvsp.nvmesapplibrary.communication.models.Request(

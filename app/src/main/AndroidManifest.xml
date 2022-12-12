@@ -41,6 +41,8 @@
             android:exported="true"
             android:theme="@style/Theme.MantaTerminal.NoActionBar">
         </activity>
+
+
     </application>
 
 </manifest>

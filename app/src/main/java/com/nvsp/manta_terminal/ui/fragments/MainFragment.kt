@@ -437,15 +437,15 @@ viewModel.activeSetting.observe(viewLifecycleOwner){set->
     }
 
     override fun onConnectSuccess() {
-        Log.i("SOCKET"," Connected successfully \n ")
+       // Log.i("SOCKET"," Connected successfully \n ")
     }
 
     override fun onConnectFailed() {
-        Log.e("SOCKET"," coneected Failed \n ")
+    //    Log.e("SOCKET"," coneected Failed \n ")
     }
 
     override fun onClose() {
-        Log.i("SOCKET"," Socket Closed \n ")
+      //  Log.i("SOCKET"," Socket Closed \n ")
     }
 
     override fun onMessage(text: String?) {
@@ -465,7 +465,7 @@ viewModel.activeSetting.observe(viewLifecycleOwner){set->
     private fun addText(text: String?) {
         CoroutineScope(Dispatchers.Main).launch {   toogleSocketLed()}
 
-        Log.e("SOCKET", "SOCKET MESSAGE: $text")
+      //  Log.e("SOCKET", "SOCKET MESSAGE: $text")
     }
     private fun toogleSocketLed(){
         try {
